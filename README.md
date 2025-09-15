@@ -24,8 +24,8 @@ It serves a simple web interface (`chat.html`) where users can interact with the
 │── static/ # Images, CSS, and static assets
 │── .gitignore # Ignored files/folders
 │── README.md # Project documentation
-│── LICENSE # License file```
-
+│── LICENSE # License file
+```
 ---
 
 
