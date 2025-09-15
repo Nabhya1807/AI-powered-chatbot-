@@ -16,7 +16,7 @@ It serves a simple web interface (`chat.html`) where users can interact with the
 ---
 
 ## 📂 Project Structure
-AI-powered-chatbot-/
+'''AI-powered-chatbot-/
 │── app.py # Main Flask application
 │── requirements.txt # Python dependencies
 │── templates/
@@ -24,7 +24,7 @@ AI-powered-chatbot-/
 │── static/ # Images, CSS, and static assets
 │── .gitignore # Ignored files/folders
 │── README.md # Project documentation
-│── LICENSE # License file
+│── LICENSE # License file'''
 
 ---
 
