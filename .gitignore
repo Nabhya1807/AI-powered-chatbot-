@@ -1,0 +1,28 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Large model/checkpoint files
+*.bin
+*.pt
+*.ckpt
+*.h5
+*.onnx
+*.weights
+*/checkpoint-*/
+*-merged/
+*-motivation/
+
+# Logs and misc
+logs/
+*.log
+.DS_Store
+
+# IDE settings
+.idea/

@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Motivational Chatbot</title>
+  <style>
+    :root {
+      --primary-color: #4A90E2;
+      --primary-hover: #357ABD;
+      --secondary-bg: #f1f1f1;
+      --user-bg: #90EE90;
+      --bot-bg: #ffffff;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --dark-bg: #121212;
+      --dark-border: #ffffff;
+      --dark-input-bg: #2A2A2A;
+      --dark-user-bubble: #25D366;
+      --dark-bot-bubble: #ECE5DD;
+      --dark-text-primary: #E0E0E0;
+      --dark-text-secondary: #BDBDBD;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(270deg, #e0f7fa, #fce4ec, #fff3e0);
+      background-size: 600% 600%;
+      animation: gradientFlow 15s ease infinite;
+      font-family: var(--font-family);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .chat-container {
+      position: relative;
+      z-index: 1;
+      width: 400px;
+      height: 600px;
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 100px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      padding: 20px;
+      background: var(--primary-color);
+      color: #fff;
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top-left-radius: 30px !important;
+      border-top-right-radius: 30px !important;
+    }
+    /* highlight style for search matches */
+    mark.search-highlight {
+      background-color: #ffeb3b;
+      color: inherit;
+      padding: 0;
+    }
+
+
+    #optionsBox {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    #optionsBox button,
+    #optionsBox .search-control {
+      font-size: 0.9rem;
+    }
+    /* style the search control container */
+    .search-control {
+      display: flex;
+      gap: 4px;
+    }
+    .search-control input {
+      flex: 1;
+      padding: 4px 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      outline: none;
+    }
+    .search-control button {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+
+
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      background: var(--secondary-bg);
+      overflow-y: auto;
+    }
+    .message {
+      max-width: 75%;
+      margin-bottom: 15px;
+      padding: 12px 16px 30px 16px;
+      border-radius: 16px;
+      word-wrap: break-word;
+      line-height: 1.5;
+      font-size: 0.95rem;
+      display: inline-block;
+      clear: both;
+      animation: slideFadeIn 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+    .message.user {
+      background: var(--user-bg);
+      float: right;
+      text-align: right;
+      border-bottom-right-radius: 0;
+    }
+    .message.bot {
+      background: var(--bot-bg);
+      float: left;
+      text-align: left;
+      border-bottom-left-radius: 0;
+      white-space: pre-wrap;
+      position:relative;
+    }
+    .timestamp {
+      font-size: 0.7rem;
+      color: black;
+      position: absolute;
+      bottom: 6px;
+      right: 10px;
+      opacity: 0.85;
+    }
+    body.dark .timestamp { color: white; }
+    @keyframes slideFadeIn {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .chat-input {
+      display: flex;
+      padding: 10px 15px;
+      background: #eee;
+      gap: 10px;
+      align-items: center;
+      overflow: visible;
+      border-bottom-left-radius: 30px ;
+      border-bottom-right-radius: 30px ;
+    }
+    .chat-input textarea {
+      flex: 1;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 20px;
+      outline: none;
+      font-size: 1rem;
+      resize: none;
+      overflow-y: auto;
+      line-height: 1.4;
+    }
+    .chat-input button,
+    .chat-input select {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .message-text.collapsed{
+      max-height: 4.5em;
+      overflow: hidden;
+      position: relative;
+    }
+    .read-more{
+      display:inline-block;
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: var(--primary-color);
+      cursor:pointer;
+      user-select: none;
+    }
+    .suggestions-container {
+      clear:both;
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .chip:hover {
+      background: var(--primary-hover);
+    }
+    #btnMic.listening{
+      background: #e74c3c;
+      color:white;
+    }
+
+    /* position the dropdown on the right side of the header */
+.chat-header { position: relative; }
+.dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items:center;
+}
+.dropdown-toggle {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+.dropdown-toggle:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+
+#dropdownToggle {
+  /* same size & centering as all the other buttons */
+  width: 40px;           /* matches .chat-input > button */
+  height: 40px;
+  padding: 0;            /* no extra padding */
+  margin: 0 4px;         /* same horizontal spacing */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+/* if you have a little arrow under #dropdownToggle, make sure it doesn’t push it up */
+.dropdown .dropdown-arrow {
+  position: absolute;
+  top: 100%;             /* just below the circle */
+  left: 50%;
+  transform: translateX(-50%);
+}
+/* hide menu by default */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;   /* drop it right below the toggle */
+  right: 0;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 8px;
+  min-width: 180px;
+  z-index: 100;
+}
+
+/* menu items styling */
+.dropdown-menu .menu-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.dropdown-menu .menu-item:last-child {
+  margin-bottom: 0;
+}
+.dropdown-menu .menu-item button {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.dropdown-menu .search-control {
+  display: flex;
+  gap: 6px;
+}
+.dropdown-menu .search-control input {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.dropdown-menu .search-control button {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* when dropdown has .open, show it */
+.dropdown.open .dropdown-menu {
+  display: block;
+}
+
+/* ─── single TTS toggle button inside each bot bubble ───────────── */
+.message.bot .tts-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--primary-color);
+  padding: 2px;
+}
+
+body.dark .message.bot .tts-btn {
+  color: var(--dark-text-secondary);
+}
+
+/* dark mode tweak */
+body.dark .tts-controls {
+  background: rgba(0, 0, 0, 0.3);
+}
+body.dark .tts-controls .tts-btn {
+  color: var(--dark-text-secondary);
+}
+
+/* shared styles for both TTS buttons */
+.message.bot .tts-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 1.2rem;         /* make the glyph nice and big */
+  color: var(--primary-color);
+}
+
+/* optionally dim them in dark mode */
+body.dark .message.bot .tts-btn {
+  color: var(--dark-text-secondary);
+}
+
+
+/* container around your 3 formatting buttons */
+.format-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* the toggle that shows “Aa ▾” */
+.format-dropdown .dropdown-toggle {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* the hidden menu */
+.format-menu {
+  display: none;
+  position: absolute;
+  bottom: 100%;      /* pop up above the toolbar */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 4px 0;
+  z-index: 1000;
+  min-width: 100px;
+  overflow:visible;
+
+
+
+}
+
+/* once .open is on the container, show it */
+.format-dropdown.open .format-menu {
+  display: block;
+}
+
+/* each button in the dropdown */
+.format-menu .menu-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #000;
+}
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Make Aa→B, I, U icons dark in light mode */
+.format-menu .menu-item {
+  color: #333333;    /* or whatever “dark” you prefer */
+}
+/* hover state */
+.format-menu .menu-item:hover {
+  background: var(--secondary-bg);
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* …and white in dark mode */
+body.dark .format-menu .menu-item {
+  color: white;
+}
+
+/* ── “＋” menu ───────────────────────────────────────────────── */
+.more-menu {
+  position: relative;
+  display: inline-flex;
+}
+.more-menu .menu-item {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  width: 36px; height: 36px;
+  margin: 0 4px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+}
+/* show placeholder text when empty */
+#userInput:empty:before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
+  /* match your input padding so it lines up */
+  padding: 10px 15px;
+  display: block;
+}
+/* make the contenteditable grow to fill the toolbar and never collapse */
+#userInput {
+  flex: 1;      /* take up all available space in .chat-input */
+  min-width: 0; /* allow it to shrink below its content width */
+}
+
+
+
+/* the vertical list that appears above the toolbar */
+.more-dropdown {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 4px;
+  flex-direction: column;
+  z-index: 100;
+}
+.more-menu.open .more-dropdown {
+  display: flex;
+}
+
+/* Aa submenu */
+.format-menu {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 40px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 4px 0;
+  flex-direction: column;
+  z-index: 200;
+}
+.more-menu.format-open .format-menu {
+  display: flex;
+}
+.format-menu .menu-item {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  text-align: center;
+  cursor: pointer;
+}
+.format-menu .menu-item:hover {
+  background: var(--secondary-bg);
+}
+
+.format-menu .menu-item:hover {
+  background: var(--secondary-bg);
+}
+
+  /* ──────────────────────────────────────────────────────────────────── */
+/* 🛠️  Unified toolbar sizing and spacing                          */
+/* ──────────────────────────────────────────────────────────────────── */
+.chat-input > button,
+.chat-input > select {
+  /* **Make every control exactly 40×40px** */
+  width: 40px;
+  height: 40px;
+
+  /* **No extra internal padding (we’ll add only where needed)** */
+  padding: 0;
+  margin: 0 4px;
+
+  /* center icon/text */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* keep the round shape */
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* 🎨 Emoji picker tweaks                                          */
+/* ──────────────────────────────────────────────────────────────────── */
+.chat-input > select#emojiPicker {
+  /* allow slightly more width for the emoji glyph */
+  width: 45px;           /* **bumped from 40px to 45px** */
+  font-size: 1.2rem;     /* **bigger font** */
+  padding: 0 6px;        /* **some side padding** */
+  appearance: none;      /* keep the native arrow hidden */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* optional: style that little down‑arrow you might add after the <select> */
+.chat-input > select#emojiPicker::-ms-expand {
+  display: none;
+}
+
+
+/* make bot bubbles positionable */
+.message.bot {
+  position: relative;
+}
+
+/* the little “play” button in the top‑right of the bubble */
+.message.bot .tts-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  /* match your primary accent color */
+  color: var(--primary-color);
+}
+
+/* tweak in dark mode */
+body.dark .message.bot .tts-btn {
+  color: var(--dark-text-secondary);
+}
+
+    .chat-input button:hover { background: var(--primary-hover); }
+    body.dark {
+      background-color: var(--dark-bg);
+      color: var(--dark-text-primary);
+    }
+    body.dark .chat-container { background: var(--dark-bg); border: 2px solid var(--dark-border); }
+    body.dark .chat-header { background: var(--dark-bg); color: var(--dark-text-primary); }
+    body.dark .chat-messages, body.dark .chat-input { background: var(--dark-bg); }
+    body.dark .chat-input textarea,
+    body.dark .chat-input button,
+    body.dark .chat-input select {
+      background: transparent;
+      color:white;
+      border: 2px solid white;
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    body.dark .chat-input button:hover,
+    body.dark .chat-input select:hover {
+      background:white;
+      color:black;
+    }
+    body.dark .format-menu {
+      background: #000; /* Optional: keep dark consistent */
+    }
+    body.dark .format-menu .menu-item {
+      color: black;
+    }
+    body.dark .message.bot { background: var(--dark-bot-bubble); color: black; }
+    body.dark .message.user { background: var(--dark-user-bubble); color: white; }
+
+    .message-text{
+      text-align: left;
+    }
+    .format-menu{
+      background-color:#ffffff;
+    }
+    .format-menu .menu-item{
+      color:#000000;
+    }
+    body.dark #formatToggle{
+      color:black;
+    }
+    body.dark .format-menu .menu-item{
+      color:white;
+    }
+    .chat-container{
+      border-radius:40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h2>Motivational Chatbot</h2>
+
+      <div class="dropdown">
+      <button id="dropdownToggle" class="dropdown-toggle">⋮</button>
+        <div class="dropdown-menu">
+          <button id="themeToggle" class="menu-item">🌓 Change Mode</button>
+          <div class="menu-item search-control">
+            <input id="searchInput" type="text" placeholder="Search…" />
+            <button id="searchBtn" title="Search">🔍</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message bot">Hi! I'm here to uplift and motivate you. ✨</div>
+      <div class="message bot" id="typingIndicator" style="display: none;">Typing...</div>
+    </div>
+
+    <div class="chat-input">
+  <!-- ① More “＋” menu -->
+  <div class="more-menu">
+    <button id="moreToggle" class="menu-item">＋</button>
+
+    <!-- pops up above the toolbar -->
+    <div class="more-dropdown">
+      <button id="formatToggle"  class="menu-item">Aa</button>
+      <button id="uploadToggle"  class="menu-item">📎</button>
+      <button id="micToggle"     class="menu-item">🎤</button>
+    </div>
+
+    <!-- pops up above “Aa” -->
+    <div class="format-menu" id="formatMenu">
+      <button id="btnBold"      class="menu-item"><b>B</b></button>
+      <button id="btnItalic"    class="menu-item"><i>I</i></button>
+      <button id="btnUnderline" class="menu-item"><u>U</u></button>
+    </div>
+  </div>
+
+
+  <!-- ② Hidden file input -->
+      <input type="file" id="fileUpload" style="display:none" accept="image/*" />
+
+      <!-- ③ User text -->
+      <div id="userInput" contenteditable="true" data-placeholder="Type your message…"></div>
+
+      <!-- ④ Emoji picker -->
+      <select id="emojiPicker">
+        <option value="">😊</option>
+        <option value="😔">😔</option>
+        <option value="🎉">🎉</option>
+        <option value="❤️">❤️</option>
+        <option value="🔥">🔥</option>
+      </select>
+
+      <!-- ⑤ Send -->
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typing = document.getElementById('typingIndicator');
+    const themeToggle = document.getElementById('themeToggle');
+    const uploadToggle=document.getElementById('uploadToggle');
+    const btnBold =document.getElementById('btnBold');
+    const btnItalic = document.getElementById('btnItalic');
+    const btnUnderline =document.getElementById('btnUnderline');
+    const emojiPicker = document.getElementById('emojiPicker');
+    const STORAGE_KEY= 'chat_history';
+
+function renderMarkdown(str) {
+  return str
+    // **bold** → <strong>bold</strong>
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // remove any leading "* " on each line
+    .replace(/^\s*\*\s+/gm, '')
+    ;
+}
+
+    function escapeHTML(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+  function linkify(str) {
+    // first escape HTML so user‑supplied text can't break your markup:
+    let escaped = escapeHTML(str);
+    // then replace URLs with anchor tags:
+    return escaped.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+  }
+
+    function saveHistory() {
+      localStorage.setItem(STORAGE_KEY, chatMessages.innerHTML);
+    }
+
+    function clearHistory() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        // show little banner at top of chat-container
+        const banner = document.createElement('div');
+        banner.id = 'resumeBanner';
+        banner.innerHTML = `
+          <div style="
+              background: #ffeaa7;
+              padding: 10px;
+              text-align: center;
+              font-size: 0.9rem;
+            ">
+            You have a saved conversation.
+            <button id="btnResume">Resume</button>
+            <button id="btnDiscard">Discard</button>
+          </div>
+        `;
+
+        const container = document.querySelector('.chat-container');
+        container.insertBefore(banner, container.firstChild);
+
+        document.getElementById('btnResume').onclick = () => {
+          // restore messages
+          chatMessages.innerHTML = saved + chatMessages.innerHTML;
+          banner.remove();
+        };
+        document.getElementById('btnDiscard').onclick = () => {
+          clearHistory();
+          banner.remove();
+        };
+      }
+    });
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("⚠️ Web Speech API not supported in this browser.");
+    } else {
+      const recognizer = new SpeechRecognition();
+      recognizer.lang      = 'en-US';
+      recognizer.interimResults = false;
+      recognizer.maxAlternatives  = 1;
+
+      const micToggle = document.getElementById('micToggle');
+      micToggle.addEventListener('click', () => {
+        recognizer.start();
+        micToggle.classList.add('listening');
+      });
+
+      recognizer.addEventListener('result', (evt) => {
+        const spoken = evt.results[0][0].transcript;
+        userInput.innerText = spoken;      // fill your contenteditable
+      });
+
+      recognizer.addEventListener('end', () => {
+        micToggle.classList.remove('listening');
+        // optionally auto‐send:
+        handleSend();
+          });
+        }
+
+
+    emojiPicker.addEventListener('change', e => {
+      const emoji = e.target.value;
+      if (!emoji) return;
+
+      // focus the editable div, then insert the emoji at the caret
+      userInput.focus();
+      document.execCommand('insertText', false, emoji);
+
+      // reset the picker
+      e.target.selectedIndex = 0;
+    });
+
+
+
+    btnBold.addEventListener('click', () => {
+      document.execCommand('bold');
+      userInput.focus();
+    });
+    btnItalic.addEventListener('click', () => {
+      document.execCommand('italic');
+      userInput.focus();
+    });
+    btnUnderline.addEventListener('click', () => {
+      document.execCommand('underline');
+      userInput.focus();
+    });
+function addMessage(text, sender, suggestions = []) {
+  // 1️⃣ Create wrapper & message container
+  const wrapper = document.createElement('div');
+  wrapper.style.width = '100%';
+  const msg = document.createElement('div');
+  msg.classList.add('message', sender);
+
+  // 2️⃣ Timestamp
+  const now  = new Date();
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // 3️⃣ Split into sentences to decide if we need "Read more"
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  let innerHTML;
+
+  if (sentences.length > 3) {
+    const firstThree = sentences.slice(0, 3).join(' ').trim();
+    const rest       = sentences.slice(3).join(' ').trim();
+      innerHTML = `
+      <div class="message-text">${renderMarkdown(linkify(firstThree))}<span class="ellipsis">…</span>
+        <span class="more" style="display:none;">${renderMarkdown(linkify(rest))}</span>
+      </div>
+      <div class="timestamp">${time}</div>
+      <div class="read-more">Read more</div>
+    `;
+  } else {
+    innerHTML =
+            `
+            <div class="message-text">
+        ${renderMarkdown(linkify(text))}
+      </div>
+      <div class="timestamp">${time}</div>
+
+    `;
+  }
+
+  msg.innerHTML = innerHTML;
+  wrapper.appendChild(msg);
+
+   // ─── single TTS button ────────────────────────────────
+  if (sender === "bot") {
+    const ttsBtn = document.createElement("button");
+    ttsBtn.className   = "tts-btn";
+    ttsBtn.textContent = "🔊";
+    ttsBtn.title       = "Play / Stop";
+
+    let utterance = null;
+    let speaking  = false;
+
+    ttsBtn.addEventListener("click", () => {
+      if (!speaking) {
+        // start speaking
+        utterance = new SpeechSynthesisUtterance(
+          msg.querySelector(".message-text").innerText
+        );
+        utterance.addEventListener("end", () => {
+          speaking = false;
+          ttsBtn.textContent = "🔊";
+        });
+        window.speechSynthesis.speak(utterance);
+        speaking = true;
+        ttsBtn.textContent = "⏹️";
+      } else {
+        // stop speaking
+        window.speechSynthesis.cancel();
+        speaking = false;
+        ttsBtn.textContent = "🔊";
+      }
+    });
+
+    msg.appendChild(ttsBtn);
+  }
+
+
+
+  // 5️⃣ Quick‑reply chips under bot
+  if (sender === 'bot' && suggestions.length) {
+    const chipsContainer = document.createElement('div');
+    chipsContainer.classList.add('suggestions-container');
+    for (const opt of suggestions) {
+      const chip = document.createElement('button');
+      chip.classList.add('chip');
+      chip.textContent = opt;
+      chip.addEventListener('click', () => {
+        userInput.innerText = opt;
+        handleSend();
+      });
+      chipsContainer.appendChild(chip);
+    }
+    wrapper.appendChild(chipsContainer);
+  }
+
+  // 6️⃣ Insert into DOM & scroll
+  const typingIndicator = document.getElementById('typingIndicator');
+  chatMessages.insertBefore(wrapper, typingIndicator);
+  chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+
+  // 7️⃣ Read‑more toggle logic
+  const toggle = wrapper.querySelector('.read-more');
+  if (toggle) {
+    const ellipsis = wrapper.querySelector('.ellipsis');
+    const more     = wrapper.querySelector('.more');
+    let expanded = false;
+    toggle.addEventListener('click', () => {
+      expanded = !expanded;
+      more.style.display     = expanded ? 'inline' : 'none';
+      ellipsis.style.display = expanded ? 'none'   : 'inline';
+      toggle.textContent     = expanded ? 'Show less' : 'Read more';
+    });
+  }
+
+  // 8️⃣ Persist to localStorage
+  saveHistory();
+}
+
+
+
+
+
+
+    // open and close the dropdown
+const dropdownToggle = document.getElementById('dropdownToggle');
+const dropdown      = dropdownToggle.closest('.dropdown');
+
+dropdownToggle.addEventListener('click', () => {
+  dropdown.classList.toggle('open');
+});
+
+// close it if you click outside
+document.addEventListener('click', e => {
+  if (!dropdown.contains(e.target)) {
+    dropdown.classList.remove('open');
+  }
+});
+
+
+
+    function handleSend() {
+    const text = (userInput.innerText || userInput.textContent || "")
+                .replace(/\u00A0/g, " ")   // turn non-breaking spaces into normal spaces
+                 .trim();
+      if (!text) return;
+      addMessage(text, 'user', []);
+      userInput.innerHTML = '';
+      typing.style.display = 'block';
+      fetch("http://127.0.0.1:8080/analyze_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      })
+      .then(res => res.json())
+      .then(data => {
+        typing.style.display = 'none';
+        const botText = data.response || "⚠️ Failed to get response.";
+        const suggestions = data.suggestions || [];
+        addMessage(botText, 'bot',suggestions);
+      })
+      .catch(() => {
+        typing.style.display = 'none';
+        addMessage("❌ Server error occurred.", 'bot');
+      });
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+    });
+
+
+    uploadToggle.addEventListener('click', () => {
+  fileUpload.click();
+});
+
+
+      fileUpload.addEventListener('change',() => {
+        const file =fileUpload.files[0];
+      if (!file || !file.type.startsWith('image/')) return alert("Upload a valid image.");
+      const formData = new FormData();
+      formData.append('image', file);
+      fetch("http://127.0.0.1:8080/upload", {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+    .then(data => {
+      // 4️⃣ Insert the returned URL into chat:
+      addMessage(
+  `<img
+     src="${data.url}"
+     alt="uploaded image"
+     style="max-width:100%;border-radius:10px;"
+   />`,
+  'user'
+);
+    })
+    .catch(() => {
+      addMessage("❌ Image upload failed.", 'bot');
+    });
+  });
+
+    // escape user input for RegExp
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// remove any existing <mark class="search-highlight"> tags
+function clearHighlights() {
+  document.querySelectorAll("mark.search-highlight").forEach(mark => {
+    const parent = mark.parentNode;
+    parent.replaceChild(document.createTextNode(mark.textContent), mark);
+    parent.normalize();
+  });
+}
+
+// find & wrap every match in a <mark>
+function performSearch(term) {
+  clearHighlights();
+  if (!term) return;
+
+ const rx = new RegExp(`(${escapeRegExp(term)})`, "gi");
+  const bubbles = document.querySelectorAll(".message-text");
+
+  let firstMatch = null;
+  bubbles.forEach(b => {
+    // replace the plain text with mark-wrapped HTML
+  b.innerHTML = b.textContent.replace(
+  rx,
+  `<mark class="search-highlight">$1</mark>`
+);
+
+    // remember the very first highlighted node
+    if (!firstMatch) firstMatch = b.querySelector("mark.search-highlight");
+  });
+
+  // scroll it into view
+  if (firstMatch) {
+    firstMatch.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+    const formatToggle = document.getElementById('formatToggle');
+    const formatDrop   = formatToggle.closest('.format-dropdown');
+
+    formatToggle.addEventListener('click', () => {
+      formatDrop.classList.toggle('open');
+    });
+
+    // close it clicking elsewhere
+    document.addEventListener('click', e => {
+      if (!formatDrop.contains(e.target)) {
+        formatDrop.classList.remove('open');
+      }
+    });
+
+// hook up the button
+document.getElementById("searchBtn").addEventListener("click", () => {
+  const term = document.getElementById("searchInput").value.trim();
+  performSearch(term);
+});
+
+// menu toggles
+const moreMenu   = document.querySelector('.more-menu');
+const moreToggle = document.getElementById('moreToggle');
+const f_t = document.getElementById('formatToggle');
+
+moreToggle.addEventListener('click', e => {
+  e.stopPropagation();
+  moreMenu.classList.toggle('open');
+});
+
+formatToggle.addEventListener('click', e => {
+  e.stopPropagation();
+  moreMenu.classList.toggle('format-open');
+});
+
+// close menus on outside click
+document.addEventListener('click', () => {
+  moreMenu.classList.remove('open', 'format-open');
+});
+
+// file‐upload wiring
+document.getElementById('uploadToggle')
+  .addEventListener('click', () => document.getElementById('fileUpload').click());
+
+// mic speech recognition
+const recognizer = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+recognizer.lang = 'en-US';
+recognizer.onresult = evt => {
+  userInput.innerText = evt.results[0][0].transcript;
+};
+document.getElementById('micToggle')
+  .addEventListener('click', () => recognizer.start());
+
+// bold/italic/underline buttons
+btnBold.addEventListener('click',    () => document.execCommand('bold'));
+btnItalic.addEventListener('click',  () => document.execCommand('italic'));
+btnUnderline.addEventListener('click',() => document.execCommand('underline'));
+
+
+
+  </script>
+</body>
+</html>
